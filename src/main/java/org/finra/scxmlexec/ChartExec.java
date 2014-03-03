@@ -4,7 +4,6 @@ import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.net.URL;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -16,7 +15,6 @@ import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.scxml.Context;
 import org.apache.commons.scxml.SCXMLExecutor;
 import org.apache.commons.scxml.SCXMLExpressionException;
 import org.apache.commons.scxml.TriggerEvent;
@@ -29,6 +27,7 @@ import org.apache.commons.scxml.model.Transition;
 import org.apache.commons.scxml.model.TransitionTarget;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.log4j.Logger;
+import org.xml.sax.SAXException;
 
 public class ChartExec implements Closeable {
 
@@ -68,26 +67,6 @@ public class ChartExec implements Closeable {
      * Generate -ve scenarios
      */
     private boolean generateNegativeScenarios = false;
-
-    /**
-     * The state machine
-     */
-    private static SCXML stateMachine = null;
-
-    /**
-     * The state machine executor
-     */
-    private static SCXMLExecutor executor;
-
-    /**
-     * The state machine evaluator
-     */
-    private static ELEvaluator elEvaluator;
-
-    /**
-     * The state machine executor
-     */
-    private static Context context;
 
     /**
      * Initial variables map
@@ -254,22 +233,22 @@ public class ChartExec implements Closeable {
      *
      * @throws ModelException
      */
-    private void resetStateMachine() throws ModelException {
+    private void resetStateMachine(SCXMLExecutor executor) throws ModelException {
         // Go to the initial state
         executor.reset();
 
         // Set the initial variables values
         for (String var : varsOut) {
-            context.set(var, "");
+            executor.getRootContext().set(var, "");
         }
 
         for (Map.Entry<String, String> entry : initialVariablesMap.entrySet()) {
-            context.set(entry.getKey(), entry.getValue());
+            executor.getRootContext().set(entry.getKey(), entry.getValue());
         }
 
         listener.reset();
         executor.go();
-        fireEvents(initialEvents);
+        fireEvents(executor, initialEvents);
     }
 
     /**
@@ -280,7 +259,7 @@ public class ChartExec implements Closeable {
      * @param commaSeparatedEvents
      * @throws ModelException
      */
-    private void fireEvents(String commaSeparatedEvents) throws ModelException {
+    private void fireEvents(SCXMLExecutor executor, String commaSeparatedEvents) throws ModelException {
         if (commaSeparatedEvents == null) {
             return;
         }
@@ -306,7 +285,7 @@ public class ChartExec implements Closeable {
         }
     }
 
-    private void fireEvents(ArrayList<String> events) throws ModelException {
+    private void fireEvents(SCXMLExecutor executor, ArrayList<String> events) throws ModelException {
         if (events == null) {
             return;
         }
@@ -359,20 +338,10 @@ public class ChartExec implements Closeable {
         String absolutePath = (new File(inputFileName)).getAbsolutePath();
         log.info("Processing file:" + absolutePath);
         varsOut = extractOutputVariables(absolutePath);
-        stateMachine = SCXMLParser.parse(new File(absolutePath).toURI().toURL(), null);
-        executor = new SCXMLExecutor();
-        elEvaluator = new ELEvaluator();
-        context = new ELContext();
-
-        executor.setEvaluator(elEvaluator);
-        executor.setStateMachine(stateMachine);
-        executor.setRootContext(context);
-        executor.addListener(stateMachine, listener);
-
         searchForScenariosDFS();
     }
 
-    private void findEvents(ArrayList<String> positive, ArrayList<String> negative) throws ModelException,
+    private void findEvents(SCXMLExecutor executor, ArrayList<String> positive, ArrayList<String> negative) throws ModelException,
             SCXMLExpressionException, IOException {
         positive.clear();
         negative.clear();
@@ -403,7 +372,7 @@ public class ChartExec implements Closeable {
             } else {
                 Boolean result;
                 try {
-                    result = (Boolean) elEvaluator.eval(context, condition);
+                    result = (Boolean) executor.getEvaluator().eval(executor.getRootContext(), condition);
                 } catch (Exception ex) {
                     throw new RuntimeException("Error while evaluating the condition: " + condition + " in state: " + currentState.getId(), ex);
                 }
@@ -478,18 +447,16 @@ public class ChartExec implements Closeable {
     /**
      * Check all the variables in the context. Generate a state with a list of
      * variables correctly assigned
-     *
-     * @param possiblePositiveStates
      */
-    private ArrayList<PossibleState> findPossibleStates() throws ModelException, SCXMLExpressionException, IOException {
+    private ArrayList<PossibleState> findPossibleStates(SCXMLExecutor executor) throws ModelException, SCXMLExpressionException, IOException {
         if (isDebugEnabled) {
             log.debug("findPossibleStates");
         }
         ArrayList<PossibleState> possiblePositiveStates = new ArrayList<PossibleState>();
         ArrayList<String> positive = new ArrayList<String>();
         ArrayList<String> negative = new ArrayList<String>();
-        findEvents(positive, negative);
-        HashMap<String, String> vars = readVarsOut();
+        findEvents(executor, positive, negative);
+        HashMap<String, String> vars = readVarsOut(executor);
         for (String state : positive) {
             PossibleState possibleState = new PossibleState();
             String[] parts = state.split("-");
@@ -502,27 +469,27 @@ public class ChartExec implements Closeable {
         return possiblePositiveStates;
     }
 
-    private static HashMap<String, String> readVarsOut() {
+    private static HashMap<String, String> readVarsOut(SCXMLExecutor executor) {
         HashMap<String, String> result = new HashMap<String, String>();
         for (String varName : varsOut) {
-            result.put(varName, (String) context.get(varName));
+            result.put(varName, (String) executor.getRootContext().get(varName));
         }
         return result;
     }
 
-    private void traceDepth(ArrayList<ArrayList<PossibleState>> possiblePositiveStatesList) throws ModelException, IOException, SCXMLExpressionException {
+    private void traceDepth(SCXMLExecutor executor, ArrayList<ArrayList<PossibleState>> possiblePositiveStatesList) throws ModelException, IOException, SCXMLExpressionException {
         if (isDebugEnabled) {
             log.debug("TraceDepth");
         }
         if (possiblePositiveStatesList.isEmpty()) {
-            resetStateMachine();
+            resetStateMachine(executor);
         } else {
             ArrayList<PossibleState> states = possiblePositiveStatesList.get(possiblePositiveStatesList.size() - 1);
             PossibleState initialState = states.get(0);
-            stateMachine.setInitial(initialState.nextStateName);
-            executor.getStateMachine().setInitialTarget((TransitionTarget) stateMachine.getTargets().get(initialState.nextStateName));
+            executor.getStateMachine().setInitial(initialState.nextStateName);
+            executor.getStateMachine().setInitialTarget((TransitionTarget) executor.getStateMachine().getTargets().get(initialState.nextStateName));
             for (Entry<String, String> var : initialState.variablesAssignment.entrySet()) {
-                context.set(var.getKey(), var.getValue());
+                executor.getRootContext().set(var.getKey(), var.getValue());
             }
             listener.reset();
             executor.reset();
@@ -545,10 +512,10 @@ public class ChartExec implements Closeable {
                     log.debug("**RESET");
                     log.debug("**SET INIT TO:" + initialState.nextStateName);
                 }
-                stateMachine.setInitial(initialState.nextStateName);
-                executor.getStateMachine().setInitialTarget((TransitionTarget) stateMachine.getTargets().get(initialState.nextStateName));
+                executor.getStateMachine().setInitial(initialState.nextStateName);
+                executor.getStateMachine().setInitialTarget((TransitionTarget) executor.getStateMachine().getTargets().get(initialState.nextStateName));
                 for (Entry<String, String> var : initialState.variablesAssignment.entrySet()) {
-                    context.set(var.getKey(), var.getValue());
+                    executor.getRootContext().set(var.getKey(), var.getValue());
                 }
                 executor.reset();
                 if (isDebugEnabled) {
@@ -556,7 +523,7 @@ public class ChartExec implements Closeable {
                 }
 
                 if (!initialState.varsInspected) {
-                    HashMap<String, String> varsVals = readVarsOut();
+                    HashMap<String, String> varsVals = readVarsOut(executor);
                     if (isDebugEnabled) {
                         log.debug("varsVals has " + varsVals);
                         log.debug("Vars not initialzed, initializing");
@@ -599,7 +566,7 @@ public class ChartExec implements Closeable {
 
                 // Set the variables
                 for (Entry<String, String> var : initialState.variablesAssignment.entrySet()) {
-                    context.set(var.getKey(), var.getValue());
+                    executor.getRootContext().set(var.getKey(), var.getValue());
                 }
             }
 
@@ -607,7 +574,7 @@ public class ChartExec implements Closeable {
                 log.debug("ALL BEFORE: " + possiblePositiveStatesList);
             }
 
-            ArrayList<PossibleState> nextPositiveStates = findPossibleStates();
+            ArrayList<PossibleState> nextPositiveStates = findPossibleStates(executor);
             //System.err.println("nextPositiveStates: " + nextPositiveStates);
 
             possiblePositiveStatesList.add(nextPositiveStates);
@@ -620,10 +587,10 @@ public class ChartExec implements Closeable {
         possiblePositiveStatesList.remove(possiblePositiveStatesList.size() - 1);
     }
 
-    public void produceOutput_test() {
-        System.out.println("***" + context.get("var_out_RECORD_TYPE") + " "
-                + context.get("var_out_REQUEST_IDENTIFIER") + " "
-                + context.get("var_out_MANIFEST_GENERATION_DATETIME"));
+    public void produceOutput_test(SCXMLExecutor executor) {
+        System.out.println("***" + executor.getRootContext().get("var_out_RECORD_TYPE") + " "
+                + executor.getRootContext().get("var_out_REQUEST_IDENTIFIER") + " "
+                + executor.getRootContext().get("var_out_MANIFEST_GENERATION_DATETIME"));
     }
 
     private void produceOutput() throws IOException {
@@ -643,6 +610,22 @@ public class ChartExec implements Closeable {
         }
     }
 
+
+    private SCXMLExecutor getNewExecutorFromFile() throws IOException, ModelException, SAXException {
+        String absolutePath = (new File(inputFileName)).getAbsolutePath();
+        SCXML stateMachine = SCXMLParser.parse(new File(absolutePath).toURI().toURL(), null);
+        SCXMLExecutor executor = new SCXMLExecutor();
+        ELEvaluator elEvaluator = new ELEvaluator();
+        ELContext context = new ELContext();
+
+        executor.setEvaluator(elEvaluator);
+        executor.setStateMachine(stateMachine);
+        executor.setRootContext(context);
+        executor.addListener(stateMachine, listener);
+
+        return executor;
+    }
+
     /**
      * Do a depth first search looking for scenarios
      *
@@ -650,8 +633,12 @@ public class ChartExec implements Closeable {
      * @throws SCXMLExpressionException
      * @throws IOException
      */
-    private void searchForScenariosDFS() throws ModelException, SCXMLExpressionException, IOException {
+    private void searchForScenariosDFS() throws ModelException, SCXMLExpressionException, IOException, SAXException {
         log.info("Search for scenarios using depth first search");
+
+        // Initialize Executor
+        SCXMLExecutor executor = getNewExecutorFromFile();
+
         ArrayList<ArrayList<PossibleState>> possiblePositiveStatesList = new ArrayList<ArrayList<PossibleState>>();
         ArrayList<String> currentStates = new ArrayList<String>();
         ArrayList<Integer> activePostiveState = new ArrayList<Integer>();
@@ -661,14 +648,14 @@ public class ChartExec implements Closeable {
         if (isDebugEnabled) {
             log.debug("Searching for the initial next possible states");
         }
-        traceDepth(possiblePositiveStatesList);
+        traceDepth(executor, possiblePositiveStatesList);
         if (isDebugEnabled) {
             log.debug("Initial depth trace: " + possiblePositiveStatesList);
         }
 
         int scenariosCount = 0;
         // Now we have the initial list with sets decompressed
-        queue.add(readVarsOut());
+        queue.add(readVarsOut(executor));
         while (true) {
             // Recursively delete one node from the end
             boolean empty;
@@ -700,12 +687,12 @@ public class ChartExec implements Closeable {
             if (isDebugEnabled) {
                 log.debug("**After removing, depth trace: " + possiblePositiveStatesList);
             }
-            traceDepth(possiblePositiveStatesList);
+            traceDepth(executor, possiblePositiveStatesList);
             if (isDebugEnabled) {
                 log.debug("**After finding next, depth trace: " + possiblePositiveStatesList);
             }
 
-            queue.add(readVarsOut());
+            queue.add(readVarsOut(executor));
 
             scenariosCount++;
             if (scenariosCount % 10000 == 0) {
@@ -723,15 +710,18 @@ public class ChartExec implements Closeable {
         }
     }
 
-    private void searchForScenarios() throws ModelException, SCXMLExpressionException, IOException {
+    private void searchForScenarios() throws ModelException, SCXMLExpressionException, IOException, SAXException {
+
+        SCXMLExecutor executor = getNewExecutorFromFile();
+
         ArrayDeque<ArrayList<String>> stack = new ArrayDeque<ArrayList<String>>();
         int numberOfScenariosGenerated = 0;
 
         ArrayList<String> positiveEvents = new ArrayList<String>();
         ArrayList<String> negativeEvents = new ArrayList<String>();
 
-        resetStateMachine();
-        findEvents(positiveEvents, negativeEvents);
+        resetStateMachine(executor);
+        findEvents(executor, positiveEvents, negativeEvents);
 
         // Add every positive event by itself, since it will be executed after the initial ones
         for (String event : positiveEvents) {
@@ -765,9 +755,10 @@ public class ChartExec implements Closeable {
                 log.debug("Searching for more scenarios using: " + scenario);
             }
 
-            resetStateMachine();
-            fireEvents(scenario);
-            findEvents(positiveEvents, negativeEvents);
+            resetStateMachine(executor);
+            fireEvents(executor, scenario);
+            findEvents(executor, positiveEvents, negativeEvents);
+            findEvents(executor, positiveEvents, negativeEvents);
 
             // Add every positive event by itself, since it will be executed after the initial ones
             for (String event : positiveEvents) {

@@ -52,16 +52,16 @@ public class DataGeneratorExecutor extends SCXMLExecutor {
 
     protected static final Logger log = Logger.getLogger(DataGeneratorExecutor.class);
 
-    private StateMachineListener listener = new StateMachineListener();
+    private StateMachineListener listener;
 
-    public DataGeneratorExecutor(){
+    public DataGeneratorExecutor() throws ModelException {
         super();
     }
 
     public DataGeneratorExecutor(String filePath) throws IOException, ModelException, SAXException {
+        this();
         String absolutePath = (new File(filePath)).getAbsolutePath();
         SCXML stateMachine = SCXMLParser.parse(new File(absolutePath).toURI().toURL(), null);
-        SCXMLExecutor executor = new SCXMLExecutor();
         ELEvaluator elEvaluator = new ELEvaluator();
         ELContext context = new ELContext();
         this.listener = new StateMachineListener();
@@ -70,9 +70,12 @@ public class DataGeneratorExecutor extends SCXMLExecutor {
         this.setStateMachine(stateMachine);
         this.setRootContext(context);
         this.addListener(stateMachine, listener);
+
+        this.reset();
     }
 
     public StateMachineListener getListener(){
+
         return listener;
     }
 
@@ -131,7 +134,7 @@ public class DataGeneratorExecutor extends SCXMLExecutor {
     }
 
 
-    private void fireEvents(List<String> events) throws ModelException {
+    public void fireEvents(List<String> events) throws ModelException {
         if (events == null) {
             return;
         }
@@ -148,7 +151,7 @@ public class DataGeneratorExecutor extends SCXMLExecutor {
         }
     }
 
-    public void findEvents( ArrayList<String> positive, ArrayList<String> negative) throws ModelException,
+    public void findEvents( List<String> positive, List<String> negative) throws ModelException,
             SCXMLExpressionException, IOException {
         positive.clear();
         negative.clear();

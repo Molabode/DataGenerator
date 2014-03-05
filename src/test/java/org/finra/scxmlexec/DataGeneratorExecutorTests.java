@@ -8,6 +8,7 @@ import org.junit.Test;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -20,7 +21,8 @@ public class DataGeneratorExecutorTests {
 
     @Before
     public void setUpExecutor() throws ModelException, SAXException, IOException {
-        executor = new DataGeneratorExecutor("test.xml");
+        URL testXmlURL=this.getClass().getResource("/test.xml");
+        executor = new DataGeneratorExecutor(testXmlURL);
     }
 
     @Test

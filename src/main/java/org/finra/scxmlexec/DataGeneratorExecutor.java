@@ -16,6 +16,7 @@ import org.xml.sax.SAXException;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.*;
 
 /**
@@ -59,9 +60,16 @@ public class DataGeneratorExecutor extends SCXMLExecutor {
     }
 
     public DataGeneratorExecutor(String filePath) throws IOException, ModelException, SAXException {
-        this();
-        String absolutePath = (new File(filePath)).getAbsolutePath();
-        SCXML stateMachine = SCXMLParser.parse(new File(absolutePath).toURI().toURL(), null);
+        URL fileUrl = new File(filePath).toURI().toURL();
+        initExecutor(fileUrl);
+    }
+
+    public DataGeneratorExecutor(URL fileUrl) throws IOException, ModelException, SAXException {
+        initExecutor(fileUrl);
+    }
+
+    public void initExecutor(URL fileUrl) throws ModelException, SAXException, IOException {
+        SCXML stateMachine = SCXMLParser.parse(fileUrl, null);
         ELEvaluator elEvaluator = new ELEvaluator();
         ELContext context = new ELContext();
         this.listener = new StateMachineListener();

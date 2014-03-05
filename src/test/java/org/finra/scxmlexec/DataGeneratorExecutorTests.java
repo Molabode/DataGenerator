@@ -23,11 +23,12 @@ public class DataGeneratorExecutorTests {
 
     @Before
     public void setUpExecutor() throws ModelException, SAXException, IOException {
-        URL testXmlURL=this.getClass().getResource("/test.xml");
+        URL testXmlURL = this.getClass().getResource("/test.xml");
         executor = new DataGeneratorExecutor(testXmlURL);
 
         varsOut = new HashSet<String>();
-        varsOut.addAll(Arrays.asList(new String[] {"var_out_RECORD_TYPE", "var_out_REQUEST_IDENTIFIER", "var_out_MANIFEST_GENERATION_DATETIME"}));
+        varsOut.addAll(Arrays.asList(new String[]{"var_out_RECORD_TYPE", "var_out_REQUEST_IDENTIFIER",
+                "var_out_MANIFEST_GENERATION_DATETIME"}));
 
         initialVarsMap = new HashMap<String, String>();
         initialEvents = new ArrayList<String>();
@@ -39,17 +40,40 @@ public class DataGeneratorExecutorTests {
         List<String> positive = new ArrayList<String>();
         List<String> negative = new ArrayList<String>();
 
-        String startState = "start";
-        String event1 = "RECORD_TYPE";
-        String state1 = "RECORD_TYPE";
+        String state1 = "start";
+        String state2 = "RECORD_TYPE";
+        String state3 = "REQUEST_IDENTIFIER";
+        String state4 = "MANIFEST_GENERATION_DATETIME";
 
         executor.findEvents(positive, negative);
-        Assert.assertTrue(startState + "-" + event1 + "-" + state1 + " not found in positive events", positive.contains(startState + "-" + event1 + "-" + state1));
+        Assert.assertTrue(state1 + "-" + state2 + "-" + state2 + " not found in positive events",
+                positive.contains(state1 + "-" + state2 + "-" + state2));
 
         List eList = new ArrayList<String>();
-        eList.add(event1);
+        eList.add(state2);
         executor.fireEvents(eList);
         executor.findEvents(positive, negative);
-        System.out.println(positive);
+
+        Assert.assertTrue(state2 + "-" + state3 + "-" + state3 + " not found in positive events",
+                positive.contains(state2 + "-" + state3 + "-" + state3));
+
+        eList = new ArrayList<String>();
+        eList.add(state3);
+        executor.fireEvents(eList);
+        executor.findEvents(positive, negative);
+
+        Assert.assertTrue(state3 + "-" + state4 + "-" + state4 + " not found in positive events",
+                positive.contains(state3 + "-" + state4 + "-" + state4));
+
+        eList = new ArrayList<String>();
+        eList.add(state4);
+        executor.fireEvents(eList);
+        executor.findEvents(positive, negative);
+
+        Assert.assertTrue(positive.size() == 0);
+    }
+
+    public void testBFS(){
+
     }
 }

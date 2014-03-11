@@ -269,7 +269,7 @@ public class ChartExec implements Closeable {
     public void processWithHybrid() throws Exception {
         initializeData();
         DataGeneratorExecutor executor = new DataGeneratorExecutor(inputFileName);
-        executor.searchForScenarios(varsOut, initialVariablesMap, initialEventsList, maxEventReps, maxScenarios, lengthOfScenario);
+        executor.searchForScenarios(varsOut, initialVariablesMap, initialEventsList, maxEventReps, maxScenarios, lengthOfScenario, 3);
     }
 
     @Override

@@ -73,7 +73,71 @@ public class DataGeneratorExecutorTests {
         Assert.assertTrue(positive.size() == 0);
     }
 
-    public void testBFS(){
+    @Test
+    public void testBFSOneLevel() throws ModelException, SCXMLExpressionException, SAXException, IOException {
+        List<PossibleState> statesAfterBFS = executor.searchForScenarios(varsOut, initialVarsMap, initialEvents, 5, 10000, 50, 1);
+        Assert.assertEquals(3, statesAfterBFS.size());
+        Assert.assertEquals("a", statesAfterBFS.get(0).variablesAssignment.get("var_out_RECORD_TYPE"));
+        Assert.assertEquals("b", statesAfterBFS.get(1).variablesAssignment.get("var_out_RECORD_TYPE"));
+        Assert.assertEquals("c", statesAfterBFS.get(2).variablesAssignment.get("var_out_RECORD_TYPE"));
+    }
 
+    @Test
+    public void testBFSTwoLevels() throws ModelException, SCXMLExpressionException, SAXException, IOException {
+        List<PossibleState> statesAfterBFS = executor.searchForScenarios(varsOut, initialVarsMap, initialEvents, 5, 10000, 50, 2);
+        Assert.assertEquals(9, statesAfterBFS.size());
+        Assert.assertEquals("a", statesAfterBFS.get(0).variablesAssignment.get("var_out_RECORD_TYPE"));
+        Assert.assertEquals("1", statesAfterBFS.get(0).variablesAssignment.get("var_out_REQUEST_IDENTIFIER"));
+        Assert.assertEquals("a", statesAfterBFS.get(1).variablesAssignment.get("var_out_RECORD_TYPE"));
+        Assert.assertEquals("2", statesAfterBFS.get(1).variablesAssignment.get("var_out_REQUEST_IDENTIFIER"));
+        Assert.assertEquals("a", statesAfterBFS.get(2).variablesAssignment.get("var_out_RECORD_TYPE"));
+        Assert.assertEquals("3", statesAfterBFS.get(2).variablesAssignment.get("var_out_REQUEST_IDENTIFIER"));
+        Assert.assertEquals("b", statesAfterBFS.get(3).variablesAssignment.get("var_out_RECORD_TYPE"));
+        Assert.assertEquals("1", statesAfterBFS.get(3).variablesAssignment.get("var_out_REQUEST_IDENTIFIER"));
+        Assert.assertEquals("b", statesAfterBFS.get(4).variablesAssignment.get("var_out_RECORD_TYPE"));
+        Assert.assertEquals("2", statesAfterBFS.get(4).variablesAssignment.get("var_out_REQUEST_IDENTIFIER"));
+        Assert.assertEquals("b", statesAfterBFS.get(5).variablesAssignment.get("var_out_RECORD_TYPE"));
+        Assert.assertEquals("3", statesAfterBFS.get(5).variablesAssignment.get("var_out_REQUEST_IDENTIFIER"));
+        Assert.assertEquals("c", statesAfterBFS.get(6).variablesAssignment.get("var_out_RECORD_TYPE"));
+        Assert.assertEquals("1", statesAfterBFS.get(6).variablesAssignment.get("var_out_REQUEST_IDENTIFIER"));
+        Assert.assertEquals("c", statesAfterBFS.get(7).variablesAssignment.get("var_out_RECORD_TYPE"));
+        Assert.assertEquals("2", statesAfterBFS.get(7).variablesAssignment.get("var_out_REQUEST_IDENTIFIER"));
+        Assert.assertEquals("c", statesAfterBFS.get(8).variablesAssignment.get("var_out_RECORD_TYPE"));
+        Assert.assertEquals("3", statesAfterBFS.get(8).variablesAssignment.get("var_out_REQUEST_IDENTIFIER"));
+
+    }
+
+    @Test
+    public void testBFSThreeLevels() throws ModelException, SCXMLExpressionException, SAXException, IOException {
+        List<PossibleState> statesAfterBFS = executor.searchForScenarios(varsOut, initialVarsMap, initialEvents, 5, 10000, 50, 3);
+        System.out.println(statesAfterBFS);
+        Assert.assertEquals(9, statesAfterBFS.size());
+        Assert.assertEquals("a", statesAfterBFS.get(0).variablesAssignment.get("var_out_RECORD_TYPE"));
+        Assert.assertEquals("1", statesAfterBFS.get(0).variablesAssignment.get("var_out_REQUEST_IDENTIFIER"));
+        Assert.assertEquals("#{nextint}", statesAfterBFS.get(0).variablesAssignment.get("var_out_MANIFEST_GENERATION_DATETIME"));
+        Assert.assertEquals("a", statesAfterBFS.get(1).variablesAssignment.get("var_out_RECORD_TYPE"));
+        Assert.assertEquals("2", statesAfterBFS.get(1).variablesAssignment.get("var_out_REQUEST_IDENTIFIER"));
+        Assert.assertEquals("#{nextint}", statesAfterBFS.get(1).variablesAssignment.get("var_out_MANIFEST_GENERATION_DATETIME"));
+        Assert.assertEquals("a", statesAfterBFS.get(2).variablesAssignment.get("var_out_RECORD_TYPE"));
+        Assert.assertEquals("3", statesAfterBFS.get(2).variablesAssignment.get("var_out_REQUEST_IDENTIFIER"));
+        Assert.assertEquals("#{nextint}", statesAfterBFS.get(2).variablesAssignment.get("var_out_MANIFEST_GENERATION_DATETIME"));
+        Assert.assertEquals("b", statesAfterBFS.get(3).variablesAssignment.get("var_out_RECORD_TYPE"));
+        Assert.assertEquals("1", statesAfterBFS.get(3).variablesAssignment.get("var_out_REQUEST_IDENTIFIER"));
+        Assert.assertEquals("#{nextint}", statesAfterBFS.get(3).variablesAssignment.get("var_out_MANIFEST_GENERATION_DATETIME"));
+        Assert.assertEquals("b", statesAfterBFS.get(4).variablesAssignment.get("var_out_RECORD_TYPE"));
+        Assert.assertEquals("2", statesAfterBFS.get(4).variablesAssignment.get("var_out_REQUEST_IDENTIFIER"));
+        Assert.assertEquals("#{nextint}", statesAfterBFS.get(4).variablesAssignment.get("var_out_MANIFEST_GENERATION_DATETIME"));
+        Assert.assertEquals("b", statesAfterBFS.get(5).variablesAssignment.get("var_out_RECORD_TYPE"));
+        Assert.assertEquals("3", statesAfterBFS.get(5).variablesAssignment.get("var_out_REQUEST_IDENTIFIER"));
+        Assert.assertEquals("#{nextint}", statesAfterBFS.get(5).variablesAssignment.get("var_out_MANIFEST_GENERATION_DATETIME"));
+        Assert.assertEquals("c", statesAfterBFS.get(6).variablesAssignment.get("var_out_RECORD_TYPE"));
+        Assert.assertEquals("1", statesAfterBFS.get(6).variablesAssignment.get("var_out_REQUEST_IDENTIFIER"));
+        Assert.assertEquals("#{nextint}", statesAfterBFS.get(6).variablesAssignment.get("var_out_MANIFEST_GENERATION_DATETIME"));
+        Assert.assertEquals("c", statesAfterBFS.get(7).variablesAssignment.get("var_out_RECORD_TYPE"));
+        Assert.assertEquals("2", statesAfterBFS.get(7).variablesAssignment.get("var_out_REQUEST_IDENTIFIER"));
+        Assert.assertEquals("#{nextint}", statesAfterBFS.get(7).variablesAssignment.get("var_out_MANIFEST_GENERATION_DATETIME"));
+        Assert.assertEquals("c", statesAfterBFS.get(8).variablesAssignment.get("var_out_RECORD_TYPE"));
+        Assert.assertEquals("3", statesAfterBFS.get(8).variablesAssignment.get("var_out_REQUEST_IDENTIFIER"));
+        Assert.assertEquals("#{nextint}", statesAfterBFS.get(8).variablesAssignment.get("var_out_MANIFEST_GENERATION_DATETIME"));
     }
 }

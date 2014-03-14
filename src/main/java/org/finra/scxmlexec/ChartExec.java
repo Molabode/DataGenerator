@@ -12,10 +12,17 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class ChartExec implements Closeable {
 
     protected static final Logger log = Logger.getLogger(ChartExec.class);
+
+    public static enum ThreadMode {
+        SINGLE, SHARED_MEM, DISTRIBUTED
+    }
+
     private static boolean isDebugEnabled = false;
 
     /**
@@ -74,6 +81,8 @@ public class ChartExec implements Closeable {
 
     private int bootstrapDepth = 0;
 
+    private ThreadMode threadMode = ThreadMode.SINGLE;
+
     public ChartExec() {
         isDebugEnabled = false;
 
@@ -88,6 +97,10 @@ public class ChartExec implements Closeable {
             }
         };
         outputThread.start();
+    }
+
+    public void setThreadMode(ThreadMode mode){
+        this.threadMode = mode;
     }
 
     public void setBootstrapDepth(int depth){
@@ -261,12 +274,36 @@ public class ChartExec implements Closeable {
                 maxEventReps, maxScenarios, lengthOfScenario, bootstrapDepth);
 
         // Complete search and send to queue
-        // Sequential mode
-        for (PossibleState state : bfsStates) {
-            DataGeneratorExecutor exec = new DataGeneratorExecutor(inputFileName);
-            exec.searchForScenariosDFS(state, queue, varsOut, initialVariablesMap, initialEventsList);
+
+        switch (threadMode){
+            case SHARED_MEM:
+                ExecutorService threadPool = Executors.newFixedThreadPool(5);
+                for (PossibleState state : bfsStates) {
+                    DataGeneratorExecutor exec = new DataGeneratorExecutor(inputFileName);
+                    Runnable worker = new SearchWorker(state, queue, exec, varsOut, initialVariablesMap, initialEventsList);
+                    threadPool.execute(worker);
+                }
+
+                threadPool.shutdown();
+
+                // Wait for threadPool shutdown to complete
+                while (!threadPool.isTerminated()) {
+                    try {
+                        log.debug("process() is waiting for thread pool to terminate");
+                        Thread.sleep(10);
+                    } catch (InterruptedException ex) {
+                    }
+                }
+                break;
+            case SINGLE:
+            default:
+                for (PossibleState state : bfsStates) {
+                    DataGeneratorExecutor exec = new DataGeneratorExecutor(inputFileName);
+                    exec.searchForScenariosDFS(state, queue, varsOut, initialVariablesMap, initialEventsList);
+                }
         }
 
+        // Wait for queue to empty (finish processing any pending output)
         while (!queue.isEmpty()) {
             try {
                 log.debug("process() is waiting for queue to empty");

@@ -29,6 +29,22 @@ public class ChartExecTests {
         exec.setUserDataOutput(consumer);
         exec.setBootstrapDepth(1);
 
+        exec.process();
+
+        System.out.println(consumer.getData());
+
+        Assert.assertEquals(9, consumer.getData().size());
+    }
+
+    @Test
+    public void testProcessParallel() throws Exception {
+        TestConsumer consumer = new TestConsumer();
+        exec.setUserDataOutput(consumer);
+        exec.setBootstrapDepth(1);
+        exec.setThreadMode(ChartExec.ThreadMode.SHARED_MEM);
+
+        exec.process();
+
         System.out.println(consumer.getData());
 
         Assert.assertEquals(9, consumer.getData().size());

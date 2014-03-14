@@ -72,6 +72,8 @@ public class ChartExec implements Closeable {
 
     private DataConsumer userDataOutput = new DefaultOutput(System.out);
 
+    private int bootstrapDepth = 0;
+
     public ChartExec() {
         isDebugEnabled = false;
 
@@ -86,6 +88,10 @@ public class ChartExec implements Closeable {
             }
         };
         outputThread.start();
+    }
+
+    public void setBootstrapDepth(int depth){
+        this.bootstrapDepth = depth;
     }
 
     public void setUserDataOutput(DataConsumer userDataOutput) {
@@ -246,11 +252,16 @@ public class ChartExec implements Closeable {
         varsOut = extractOutputVariables(absolutePath);
     }
 
-    public void process(int depth) throws Exception {
+    public void process() throws Exception {
         initializeData();
         DataGeneratorExecutor executor = new DataGeneratorExecutor(inputFileName);
+
+        // Get BFS-generated states for bootstrapping parallel search
         List<PossibleState> bfsStates = executor.searchForScenarios(varsOut, initialVariablesMap, initialEventsList,
-                maxEventReps, maxScenarios, lengthOfScenario, depth);
+                maxEventReps, maxScenarios, lengthOfScenario, bootstrapDepth);
+
+        // Complete search and send to queue
+        // Sequential mode
         for (PossibleState state : bfsStates) {
             DataGeneratorExecutor exec = new DataGeneratorExecutor(inputFileName);
             exec.searchForScenariosDFS(state, queue, varsOut, initialVariablesMap, initialEventsList);

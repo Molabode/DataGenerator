@@ -27,7 +27,7 @@ public class ChartExecTests {
     public void testProcess() throws Exception {
         TestConsumer consumer = new TestConsumer();
         exec.setUserDataOutput(consumer);
-        exec.process(1);
+        exec.setBootstrapDepth(1);
 
         System.out.println(consumer.getData());
 

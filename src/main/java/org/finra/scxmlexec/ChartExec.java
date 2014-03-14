@@ -83,6 +83,8 @@ public class ChartExec implements Closeable {
 
     private ThreadMode threadMode = ThreadMode.SINGLE;
 
+    private int threadCount = 4;
+
     public ChartExec() {
         isDebugEnabled = false;
 
@@ -97,6 +99,10 @@ public class ChartExec implements Closeable {
             }
         };
         outputThread.start();
+    }
+
+    public void setThreadCount(int count){
+        this.threadCount = count;
     }
 
     public void setThreadMode(ThreadMode mode){
@@ -277,7 +283,7 @@ public class ChartExec implements Closeable {
 
         switch (threadMode){
             case SHARED_MEM:
-                ExecutorService threadPool = Executors.newFixedThreadPool(5);
+                ExecutorService threadPool = Executors.newFixedThreadPool(threadCount);
                 for (PossibleState state : bfsStates) {
                     DataGeneratorExecutor exec = new DataGeneratorExecutor(inputFileName);
                     Runnable worker = new SearchWorker(state, queue, exec, varsOut, initialVariablesMap, initialEventsList);

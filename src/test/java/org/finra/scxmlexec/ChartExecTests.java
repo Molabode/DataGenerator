@@ -42,6 +42,7 @@ public class ChartExecTests {
         exec.setUserDataOutput(consumer);
         exec.setBootstrapDepth(1);
         exec.setThreadMode(ChartExec.ThreadMode.SHARED_MEM);
+        exec.setThreadCount(4);
 
         exec.process();
 

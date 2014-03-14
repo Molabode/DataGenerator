@@ -91,7 +91,7 @@ public class DataGeneratorExecutor extends SCXMLExecutor {
         this.go();
         fireEvents(initialEvents);
 
-        if(variableOverride != null){
+        if (variableOverride != null) {
             for (Map.Entry<String, String> entry : variableOverride.entrySet()) {
                 this.getRootContext().set(entry.getKey(), entry.getValue());
             }
@@ -228,11 +228,12 @@ public class DataGeneratorExecutor extends SCXMLExecutor {
     }
 
     public void traceDepth(ArrayList<ArrayList<PossibleState>> possiblePositiveStatesList, Set<String> varsOut,
-                           Map<String, String> initialVariablesMap, List<String> initialEvents) throws
+                           Map<String, String> initialVariablesMap, List<String> initialEvents, Map<String,
+            String> expandedVars) throws
             ModelException, IOException, SCXMLExpressionException {
         log.debug("TraceDepth");
         if (possiblePositiveStatesList.isEmpty()) {
-            this.resetStateMachine(varsOut, initialVariablesMap, initialEvents);
+            this.resetStateMachine(varsOut, initialVariablesMap, initialEvents, expandedVars);
         } else {
             ArrayList<PossibleState> states = possiblePositiveStatesList.get(possiblePositiveStatesList.size() - 1);
             PossibleState initialState = states.get(0);
@@ -329,7 +330,8 @@ public class DataGeneratorExecutor extends SCXMLExecutor {
      * @throws SCXMLExpressionException
      * @throws IOException
      */
-    public void searchForScenariosDFS(Queue queue, Set<String> varsOut, Map<String, String> initialVariablesMap,
+    public void searchForScenariosDFS(PossibleState startState, Queue queue, Set<String> varsOut, Map<String,
+            String> initialVariablesMap,
                                       List<String> initialEvents) throws ModelException, SCXMLExpressionException,
             IOException, SAXException {
         log.info("Search for scenarios using depth first search");
@@ -341,8 +343,8 @@ public class DataGeneratorExecutor extends SCXMLExecutor {
         // First we have to generate the first level in the depth, so that we have something to start
         // the recursion from
         log.debug("Searching for the initial next possible states");
-
-        traceDepth(possiblePositiveStatesList, varsOut, initialVariablesMap, initialEvents);
+        traceDepth(possiblePositiveStatesList, varsOut, initialVariablesMap, startState.events, startState
+                .variablesAssignment);
         log.debug("Initial depth trace: " + possiblePositiveStatesList);
 
         int scenariosCount = 0;
@@ -374,7 +376,7 @@ public class DataGeneratorExecutor extends SCXMLExecutor {
             }
 
             log.debug("**After removing, depth trace: " + possiblePositiveStatesList);
-            traceDepth(possiblePositiveStatesList, varsOut, initialVariablesMap, initialEvents);
+            traceDepth(possiblePositiveStatesList, varsOut, initialVariablesMap, initialEvents, null);
             log.debug("**After finding next, depth trace: " + possiblePositiveStatesList);
 
             queue.add(readVarsOut(varsOut));

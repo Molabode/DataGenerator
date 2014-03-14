@@ -1,33 +1,17 @@
 package org.finra.scxmlexec;
 
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.scxml.SCXMLExecutor;
+import org.apache.hadoop.io.SequenceFile;
+import org.apache.log4j.Logger;
+
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
+import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.scxml.SCXMLExecutor;
-import org.apache.commons.scxml.SCXMLExpressionException;
-import org.apache.commons.scxml.TriggerEvent;
-import org.apache.commons.scxml.env.jsp.ELContext;
-import org.apache.commons.scxml.env.jsp.ELEvaluator;
-import org.apache.commons.scxml.io.SCXMLParser;
-import org.apache.commons.scxml.model.ModelException;
-import org.apache.commons.scxml.model.SCXML;
-import org.apache.commons.scxml.model.Transition;
-import org.apache.commons.scxml.model.TransitionTarget;
-import org.apache.hadoop.io.SequenceFile;
-import org.apache.log4j.Logger;
-import org.xml.sax.SAXException;
 
 public class ChartExec implements Closeable {
 
@@ -81,7 +65,8 @@ public class ChartExec implements Closeable {
 
     private SequenceFile.Writer sequenceFileWriter = null;
 
-    private final ConcurrentLinkedQueue<HashMap<String, String>> queue = new ConcurrentLinkedQueue<HashMap<String, String>>();
+    private final ConcurrentLinkedQueue<HashMap<String, String>> queue = new ConcurrentLinkedQueue<HashMap<String,
+            String>>();
 
     private final Thread outputThread;
 
@@ -240,7 +225,8 @@ public class ChartExec implements Closeable {
                     lastIndex++;
                 }
                 if (lastIndex == line.length()) {
-                    throw new IOException("Reached the end of the line while parsing variable name in line: '" + line + "'.");
+                    throw new IOException("Reached the end of the line while parsing variable name in line: '" + line
+                            + "'.");
                 }
                 String varName = line.substring(startIndex, lastIndex);
                 log.info("Found variable: " + varName);
@@ -260,16 +246,23 @@ public class ChartExec implements Closeable {
         varsOut = extractOutputVariables(absolutePath);
     }
 
-    public void process() throws Exception {
+    public void process(int depth) throws Exception {
         initializeData();
         DataGeneratorExecutor executor = new DataGeneratorExecutor(inputFileName);
-        executor.searchForScenariosDFS(queue, varsOut, initialVariablesMap, initialEventsList);
-    }
+        List<PossibleState> bfsStates = executor.searchForScenarios(varsOut, initialVariablesMap, initialEventsList,
+                maxEventReps, maxScenarios, lengthOfScenario, depth);
+        for (PossibleState state : bfsStates) {
+            DataGeneratorExecutor exec = new DataGeneratorExecutor(inputFileName);
+            exec.searchForScenariosDFS(state, queue, varsOut, initialVariablesMap, initialEventsList);
+        }
 
-    public void processWithHybrid() throws Exception {
-        initializeData();
-        DataGeneratorExecutor executor = new DataGeneratorExecutor(inputFileName);
-        executor.searchForScenarios(varsOut, initialVariablesMap, initialEventsList, maxEventReps, maxScenarios, lengthOfScenario, 3);
+        while (!queue.isEmpty()) {
+            try {
+                log.debug("process() is waiting for queue to empty");
+                Thread.sleep(10);
+            } catch (InterruptedException ex) {
+            }
+        }
     }
 
     @Override

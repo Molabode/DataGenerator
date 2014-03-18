@@ -1,11 +1,7 @@
 package org.finra.scxmlexec;
 
-import org.apache.commons.scxml.SCXMLExpressionException;
-import org.apache.commons.scxml.model.ModelException;
 import org.apache.log4j.Logger;
-import org.xml.sax.SAXException;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
@@ -28,7 +24,8 @@ public class SearchWorker implements Runnable {
     private List<String> initialEventsList;
 
 
-    public SearchWorker(PossibleState initialState, Queue queue, DataGeneratorExecutor executor, Set<String> varsOut, Map<String, String> initialVariablesMap, List<String> initialEventsList) {
+    public SearchWorker(PossibleState initialState, Queue queue, DataGeneratorExecutor executor, Set<String> varsOut,
+                        Map<String, String> initialVariablesMap, List<String> initialEventsList) {
         this.initialState = initialState;
         this.queue = queue;
         this.executor = executor;
@@ -41,7 +38,7 @@ public class SearchWorker implements Runnable {
     public void run() {
         try {
             executor.searchForScenariosDFS(initialState, queue, varsOut, initialVariablesMap, initialEventsList);
-        } catch (Exception exc){
+        } catch (Exception exc) {
             log.error("Exception has occurred during DFS worker thread", exc);
         }
     }

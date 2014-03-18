@@ -444,6 +444,7 @@ public class DataGeneratorExecutor extends SCXMLExecutor {
         return stateList;
     }
 
+    // TODO: Update this to take a desired size of List instead of fixed depth (it will be a min of List size)
     public List<PossibleState> searchForScenarios(Set<String> varsOut, Map<String, String> initialVariablesMap,
                                                   List<String> initialEvents, int maxEventReps, int maxScenarios,
                                                   int lengthOfScenario, int depth) throws ModelException,

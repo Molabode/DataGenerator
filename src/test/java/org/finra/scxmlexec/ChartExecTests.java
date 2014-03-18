@@ -28,6 +28,7 @@ public class ChartExecTests {
         TestConsumer consumer = new TestConsumer();
         exec.setUserDataOutput(consumer);
         exec.setBootstrapDepth(1);
+        exec.setThreadMode(ChartExec.ThreadMode.SINGLE);
 
         exec.process();
 
@@ -57,7 +58,7 @@ public class ChartExecTests {
         @Override
         public void consume(HashMap<String, String> row) {
             data.add(row);
-            System.out.println("I saw a : "+ row);
+            System.out.println("I saw a : " + row);
         }
 
         public List<Map<String, String>> getData() {

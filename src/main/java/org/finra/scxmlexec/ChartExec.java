@@ -83,7 +83,7 @@ public class ChartExec implements Closeable {
 
     private ThreadMode threadMode = ThreadMode.SINGLE;
 
-    private int threadCount = 4;
+    private int threadCount = 1;
 
     public ChartExec() {
         isDebugEnabled = false;
@@ -101,15 +101,15 @@ public class ChartExec implements Closeable {
         outputThread.start();
     }
 
-    public void setThreadCount(int count){
+    public void setThreadCount(int count) {
         this.threadCount = count;
     }
 
-    public void setThreadMode(ThreadMode mode){
+    public void setThreadMode(ThreadMode mode) {
         this.threadMode = mode;
     }
 
-    public void setBootstrapDepth(int depth){
+    public void setBootstrapDepth(int depth) {
         this.bootstrapDepth = depth;
     }
 
@@ -280,13 +280,20 @@ public class ChartExec implements Closeable {
                 maxEventReps, maxScenarios, lengthOfScenario, bootstrapDepth);
 
         // Complete search and send to queue
-
-        switch (threadMode){
+        switch (threadMode) {
+            case SINGLE:
+                for (PossibleState state : bfsStates) {
+                    DataGeneratorExecutor exec = new DataGeneratorExecutor(inputFileName);
+                    exec.searchForScenariosDFS(state, queue, varsOut, initialVariablesMap, initialEventsList);
+                }
+                break;
             case SHARED_MEM:
+            default:
                 ExecutorService threadPool = Executors.newFixedThreadPool(threadCount);
                 for (PossibleState state : bfsStates) {
                     DataGeneratorExecutor exec = new DataGeneratorExecutor(inputFileName);
-                    Runnable worker = new SearchWorker(state, queue, exec, varsOut, initialVariablesMap, initialEventsList);
+                    Runnable worker = new SearchWorker(state, queue, exec, varsOut, initialVariablesMap,
+                            initialEventsList);
                     threadPool.execute(worker);
                 }
 
@@ -301,12 +308,6 @@ public class ChartExec implements Closeable {
                     }
                 }
                 break;
-            case SINGLE:
-            default:
-                for (PossibleState state : bfsStates) {
-                    DataGeneratorExecutor exec = new DataGeneratorExecutor(inputFileName);
-                    exec.searchForScenariosDFS(state, queue, varsOut, initialVariablesMap, initialEventsList);
-                }
         }
 
         // Wait for queue to empty (finish processing any pending output)

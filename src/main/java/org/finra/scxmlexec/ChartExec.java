@@ -11,6 +11,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.*;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -72,16 +73,15 @@ public class ChartExec implements Closeable {
 
     private SequenceFile.Writer sequenceFileWriter = null;
 
-    private final ConcurrentLinkedQueue<HashMap<String, String>> queue = new ConcurrentLinkedQueue<HashMap<String,
-            String>>();
+    private final Queue<HashMap<String, String>> queue = new ConcurrentLinkedQueue<HashMap<String, String>>();
 
     private final Thread outputThread;
 
     private DataConsumer userDataOutput = new DefaultOutput(System.out);
 
-    private int bootstrapDepth = 0;
+    private int bootstrapMin = 0;
 
-    private ThreadMode threadMode = ThreadMode.SINGLE;
+    private ThreadMode threadMode = ThreadMode.SHARED_MEM;
 
     private int threadCount = 1;
 
@@ -109,8 +109,8 @@ public class ChartExec implements Closeable {
         this.threadMode = mode;
     }
 
-    public void setBootstrapDepth(int depth) {
-        this.bootstrapDepth = depth;
+    public void setBootstrapMin(int depth) {
+        this.bootstrapMin = depth;
     }
 
     public void setUserDataOutput(DataConsumer userDataOutput) {
@@ -277,7 +277,7 @@ public class ChartExec implements Closeable {
 
         // Get BFS-generated states for bootstrapping parallel search
         List<PossibleState> bfsStates = executor.searchForScenarios(varsOut, initialVariablesMap, initialEventsList,
-                maxEventReps, maxScenarios, lengthOfScenario, bootstrapDepth);
+                maxEventReps, maxScenarios, lengthOfScenario, bootstrapMin);
 
         // Complete search and send to queue
         switch (threadMode) {
@@ -331,12 +331,6 @@ public class ChartExec implements Closeable {
             result.put(varName, (String) executor.getRootContext().get(varName));
         }
         return result;
-    }
-
-    public void produceOutput_test(SCXMLExecutor executor) {
-        System.out.println("***" + executor.getRootContext().get("var_out_RECORD_TYPE") + " "
-                + executor.getRootContext().get("var_out_REQUEST_IDENTIFIER") + " "
-                + executor.getRootContext().get("var_out_MANIFEST_GENERATION_DATETIME"));
     }
 
     private void produceOutput() throws IOException {

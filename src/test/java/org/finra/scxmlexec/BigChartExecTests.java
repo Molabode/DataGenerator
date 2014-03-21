@@ -12,14 +12,14 @@ import java.util.Map;
 /**
  * Created by robbinbr on 3/3/14.
  */
-public class ChartExecTests {
+public class BigChartExecTests {
 
     private ChartExec exec;
 
     @Before
     public void setUpChartExec() {
         exec = new ChartExec();
-        exec.setInputFileName("src/test/resources/test.xml");
+        exec.setInputFileName("src/test/resources/big.xml");
         exec.setUserDataOutput(new TestConsumer());
     }
 

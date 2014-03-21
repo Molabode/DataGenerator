@@ -117,13 +117,13 @@ public class DataGeneratorExecutor extends SCXMLExecutor {
 
         String[] events = commaSeparatedEvents.split(",");
         for (String event : events) {
-            log.debug("Firing event: " + event);
+            //log.debug("Firing event: " + event);
             String eventName = event;
             if (eventName.contains("-")) {
                 String[] parts = event.split("-");
                 eventName = parts[1];
             }
-            log.debug("EventName:" + eventName);
+            //log.debug("EventName:" + eventName);
             this.triggerEvent(new TriggerEvent(eventName, TriggerEvent.SIGNAL_EVENT));
         }
     }
@@ -135,13 +135,13 @@ public class DataGeneratorExecutor extends SCXMLExecutor {
         }
 
         for (String event : events) {
-            log.debug("Firing event: " + event);
+            //log.debug("Firing event: " + event);
             String eventName = event;
             if (eventName.contains("-")) {
                 String[] parts = event.split("-");
                 eventName = parts[1];
             }
-            log.debug("EventName:" + eventName);
+            //log.debug("EventName:" + eventName);
             this.triggerEvent(new TriggerEvent(eventName, TriggerEvent.SIGNAL_EVENT));
         }
     }
@@ -209,7 +209,7 @@ public class DataGeneratorExecutor extends SCXMLExecutor {
      */
     public ArrayList<PossibleState> findPossibleStates(Set<String> varNames) throws ModelException,
             SCXMLExpressionException, IOException {
-        log.debug("findPossibleStates");
+        //log.debug("findPossibleStates");
         ArrayList<PossibleState> possiblePositiveStates = new ArrayList<PossibleState>();
         ArrayList<String> positive = new ArrayList<String>();
         ArrayList<String> negative = new ArrayList<String>();
@@ -231,7 +231,7 @@ public class DataGeneratorExecutor extends SCXMLExecutor {
                            Map<String, String> initialVariablesMap, List<String> initialEvents, Map<String,
             String> expandedVars) throws
             ModelException, IOException, SCXMLExpressionException {
-        log.debug("TraceDepth");
+        //log.debug("TraceDepth");
         if (possiblePositiveStatesList.isEmpty()) {
             this.resetStateMachine(varsOut, initialVariablesMap, initialEvents, expandedVars);
         } else {
@@ -246,18 +246,18 @@ public class DataGeneratorExecutor extends SCXMLExecutor {
             this.reset();
         }
 
-        log.debug("Loop start");
+        //log.debug("Loop start");
 
         while (listener.getCurrentState() == null
                 || (listener.getCurrentState() != null && !listener.getCurrentState().getId().equals("end"))) {
-            log.debug("ALL AFTER RESET: " + possiblePositiveStatesList);
+            //log.debug("ALL AFTER RESET: " + possiblePositiveStatesList);
             // Replay the last initial state
             /*for (ArrayList<PossibleState> states : possiblePositiveStatesList)*/
             if (possiblePositiveStatesList.size() > 0) {
                 ArrayList<PossibleState> states = possiblePositiveStatesList.get(possiblePositiveStatesList.size() - 1);
                 PossibleState initialState = states.get(0);
-                log.debug("**RESET");
-                log.debug("**SET INIT TO:" + initialState.nextStateName);
+                //log.debug("**RESET");
+                //log.debug("**SET INIT TO:" + initialState.nextStateName);
                 this.getStateMachine().setInitial(initialState.nextStateName);
                 this.getStateMachine().setInitialTarget((TransitionTarget) this.getStateMachine().getTargets().get
                         (initialState.nextStateName));
@@ -266,19 +266,19 @@ public class DataGeneratorExecutor extends SCXMLExecutor {
                 }
                 this.reset();
 
-                log.debug("current state:" + listener.getCurrentState().getId());
+                //log.debug("current state:" + listener.getCurrentState().getId());
 
                 if (!initialState.varsInspected) {
                     HashMap<String, String> varsVals = readVarsOut(varsOut);
-                    log.debug("varsVals has " + varsVals);
-                    log.debug("Vars not initialzed, initializing");
+                    //log.debug("varsVals has " + varsVals);
+                    //log.debug("Vars not initialzed, initializing");
                     if (varsVals == null || varsVals.isEmpty()) {
                         throw new IOException("Empty or null varsVals");
                     }
                     for (Map.Entry<String, String> var : varsVals.entrySet()) {
                         String nextVal = var.getValue();
-                        log.debug("key:" + var.getKey());
-                        log.debug("val:" + nextVal);
+                        //log.debug("key:" + var.getKey());
+                        //log.debug("val:" + nextVal);
                         if (nextVal.length() > 5 && nextVal.startsWith("set:{")) {
                             // Remove the set:{ and }
                             String[] vals = nextVal.substring(5, nextVal.length() - 1).split(",");
@@ -294,7 +294,7 @@ public class DataGeneratorExecutor extends SCXMLExecutor {
                                 possibleState.variablesAssignment.put(var.getKey(), val);
                                 possibleState.varsInspected = true;
                                 states.add(0, possibleState);
-                                log.debug("Adding:" + possibleState);
+                                //log.debug("Adding:" + possibleState);
                             }
                         } else {
                             states.get(0).variablesAssignment.put(var.getKey(), nextVal);
@@ -310,13 +310,13 @@ public class DataGeneratorExecutor extends SCXMLExecutor {
                 }
             }
 
-            log.debug("ALL BEFORE: " + possiblePositiveStatesList);
+            //log.debug("ALL BEFORE: " + possiblePositiveStatesList);
 
             ArrayList<PossibleState> nextPositiveStates = findPossibleStates(varsOut);
             //System.err.println("nextPositiveStates: " + nextPositiveStates);
 
             possiblePositiveStatesList.add(nextPositiveStates);
-            log.debug("ALL AFTER: " + possiblePositiveStatesList);
+            //log.debug("ALL AFTER: " + possiblePositiveStatesList);
         }
 
         // Remove end
@@ -334,7 +334,8 @@ public class DataGeneratorExecutor extends SCXMLExecutor {
             String> initialVariablesMap,
                                       List<String> initialEvents) throws ModelException, SCXMLExpressionException,
             IOException, SAXException {
-        log.info("Search for scenarios using depth first search");
+        //log.debug(Thread.currentThread().getName() + " starting DFS on " + startState);
+        //log.info("Search for scenarios using depth first search");
 
         ArrayList<ArrayList<PossibleState>> possiblePositiveStatesList = new ArrayList<ArrayList<PossibleState>>();
         ArrayList<String> currentStates = new ArrayList<String>();
@@ -342,14 +343,16 @@ public class DataGeneratorExecutor extends SCXMLExecutor {
 
         // First we have to generate the first level in the depth, so that we have something to start
         // the recursion from
-        log.debug("Searching for the initial next possible states");
+        //log.debug("Searching for the initial next possible states");
         traceDepth(possiblePositiveStatesList, varsOut, initialVariablesMap, startState.events, startState
                 .variablesAssignment);
-        log.debug("Initial depth trace: " + possiblePositiveStatesList);
+        //log.debug("Initial depth trace: " + possiblePositiveStatesList);
 
         int scenariosCount = 0;
         // Now we have the initial list with sets decompressed
-        queue.add(readVarsOut(varsOut));
+        Map<String, String> dataSet = readVarsOut(varsOut);
+        //log.debug(Thread.currentThread().getName() + " adding to queue: " + dataSet);
+        queue.add(dataSet);
         while (true) {
             // Recursively delete one node from the end
             boolean empty;
@@ -362,9 +365,9 @@ public class DataGeneratorExecutor extends SCXMLExecutor {
                 int lastDepth = possiblePositiveStatesList.size() - 1;
                 PossibleState removed = possiblePositiveStatesList.get(lastDepth).remove(0);
 
-                log.debug("Removing: " + removed.nextStateName);
+                //log.debug("Removing: " + removed.nextStateName);
                 if (possiblePositiveStatesList.get(lastDepth).isEmpty()) {
-                    log.debug("Empty at level: " + possiblePositiveStatesList.size());
+                    //log.debug("Empty at level: " + possiblePositiveStatesList.size());
                     possiblePositiveStatesList.remove(possiblePositiveStatesList.size() - 1);
                     empty = true;
                 }
@@ -375,15 +378,17 @@ public class DataGeneratorExecutor extends SCXMLExecutor {
                 break;
             }
 
-            log.debug("**After removing, depth trace: " + possiblePositiveStatesList);
+            //log.debug("**After removing, depth trace: " + possiblePositiveStatesList);
             traceDepth(possiblePositiveStatesList, varsOut, initialVariablesMap, initialEvents, null);
-            log.debug("**After finding next, depth trace: " + possiblePositiveStatesList);
+            //log.debug("**After finding next, depth trace: " + possiblePositiveStatesList);
 
-            queue.add(readVarsOut(varsOut));
+            dataSet = readVarsOut(varsOut);
+            //log.debug(Thread.currentThread().getName() + " adding to queue: " + dataSet);
+            queue.add(dataSet);
 
             scenariosCount++;
             if (scenariosCount % 10000 == 0) {
-                log.info("Queue size=" + queue.size());
+                //log.info("Queue size=" + queue.size());
             }
 
             if (queue.size() > 1000000) {
@@ -438,16 +443,15 @@ public class DataGeneratorExecutor extends SCXMLExecutor {
             possibleStateInner.events.addAll(state.events);
             possibleStateInner.varsInspected = true;
             stateList.add(possibleStateInner);
-            log.debug("Adding:" + possibleStateInner);
+            //log.debug("Adding:" + possibleStateInner);
         }
 
         return stateList;
     }
 
-    // TODO: Update this to take a desired size of List instead of fixed depth (it will be a min of List size)
     public List<PossibleState> searchForScenarios(Set<String> varsOut, Map<String, String> initialVariablesMap,
                                                   List<String> initialEvents, int maxEventReps, int maxScenarios,
-                                                  int lengthOfScenario, int depth) throws ModelException,
+                                                  int lengthOfScenario, int minCount) throws ModelException,
             SCXMLExpressionException, IOException, SAXException {
 
         int numberOfScenariosGenerated = 0;
@@ -458,9 +462,13 @@ public class DataGeneratorExecutor extends SCXMLExecutor {
         PossibleState startState = new PossibleState();
         startState.variablesAssignment.putAll(initialVariablesMap);
         startState.events.addAll(initialEvents);
+
+        int prevNextLevelSize = 0;
         nextLevel.add(startState);
 
-        for (int iDepth = 0; iDepth < depth; iDepth++) {
+        while ((nextLevel.size() < minCount) &&(nextLevel.size() > prevNextLevelSize) && (minCount > 0)) {
+            prevNextLevelSize = nextLevel.size();
+
             // Initialize list of states for this depth
             List<PossibleState> states = new ArrayList<PossibleState>();
             states.addAll(nextLevel);
@@ -572,7 +580,7 @@ public class DataGeneratorExecutor extends SCXMLExecutor {
             b.append(event);
         }
 
-        log.info(b);
+        //log.info(b);
 
     }
 }

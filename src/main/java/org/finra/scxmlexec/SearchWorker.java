@@ -37,7 +37,9 @@ public class SearchWorker implements Runnable {
     @Override
     public void run() {
         try {
+            log.info(Thread.currentThread().getName() + " is starting DFS");
             executor.searchForScenariosDFS(initialState, queue, varsOut, initialVariablesMap, initialEventsList);
+            log.info(Thread.currentThread().getName() + " is done with DFS");
         } catch (Exception exc) {
             log.error("Exception has occurred during DFS worker thread", exc);
         }

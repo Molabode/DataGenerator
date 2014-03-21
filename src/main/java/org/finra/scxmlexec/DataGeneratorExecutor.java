@@ -466,7 +466,7 @@ public class DataGeneratorExecutor extends SCXMLExecutor {
         int prevNextLevelSize = 0;
         nextLevel.add(startState);
 
-        while ((nextLevel.size() < minCount) &&(nextLevel.size() > prevNextLevelSize) && (minCount > 0)) {
+        while ((nextLevel.size() < minCount) && (minCount > 0)) {
             prevNextLevelSize = nextLevel.size();
 
             // Initialize list of states for this depth

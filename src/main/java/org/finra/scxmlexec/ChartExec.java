@@ -279,6 +279,8 @@ public class ChartExec implements Closeable {
         List<PossibleState> bfsStates = executor.searchForScenarios(varsOut, initialVariablesMap, initialEventsList,
                 maxEventReps, maxScenarios, lengthOfScenario, bootstrapMin);
 
+        log.info("Found " + bfsStates.size() + " states to start from");
+
         // Complete search and send to queue
         switch (threadMode) {
             case SINGLE:
@@ -302,7 +304,7 @@ public class ChartExec implements Closeable {
                 // Wait for threadPool shutdown to complete
                 while (!threadPool.isTerminated()) {
                     try {
-                        log.debug("process() is waiting for thread pool to terminate");
+                        //log.debug("process() is waiting for thread pool to terminate");
                         Thread.sleep(10);
                     } catch (InterruptedException ex) {
                     }
@@ -313,7 +315,7 @@ public class ChartExec implements Closeable {
         // Wait for queue to empty (finish processing any pending output)
         while (!queue.isEmpty()) {
             try {
-                log.debug("process() is waiting for queue to empty");
+                //log.debug("process() is waiting for queue to empty");
                 Thread.sleep(10);
             } catch (InterruptedException ex) {
             }

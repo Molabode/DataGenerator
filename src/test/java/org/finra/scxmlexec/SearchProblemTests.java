@@ -21,6 +21,7 @@ public class SearchProblemTests {
 
         SearchProblem one = problems.get(0);
         String json = one.toJson();
+        System.out.println(json);
         SearchProblem oneFromJson = SearchProblem.fromJson(json);
 
         Assert.assertTrue(oneFromJson.getVarsOut().equals(one.getVarsOut()));

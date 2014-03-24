@@ -3,26 +3,19 @@ package org.finra.scxmlexec;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.scxml.SCXMLExecutor;
+import org.apache.commons.scxml.io.SCXMLParser;
+import org.apache.commons.scxml.model.SCXML;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.log4j.Logger;
 
-import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.*;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
-public class ChartExec implements Closeable {
+public class ChartExec {
 
     protected static final Logger log = Logger.getLogger(ChartExec.class);
-
-    public static enum ThreadMode {
-        SINGLE, SHARED_MEM, DISTRIBUTED
-    }
 
     private static boolean isDebugEnabled = false;
 
@@ -73,40 +66,22 @@ public class ChartExec implements Closeable {
 
     private SequenceFile.Writer sequenceFileWriter = null;
 
-    private final Queue<HashMap<String, String>> queue = new ConcurrentLinkedQueue<HashMap<String, String>>();
-
-    private final Thread outputThread;
-
     private DataConsumer userDataOutput = new DefaultOutput(System.out);
 
     private int bootstrapMin = 0;
 
-    private ThreadMode threadMode = ThreadMode.SHARED_MEM;
+    private SearchDistributor userSearchDistributor = new DefaultDistributor();
+
+    private Map<String, String> userSearchDistributorOptions = new HashMap<String, String>();
 
     private int threadCount = 1;
 
     public ChartExec() {
         isDebugEnabled = false;
-
-        outputThread = new Thread() {
-            @Override
-            public void run() {
-                try {
-                    produceOutput();
-                } catch (IOException ex) {
-                    log.error("Error during output", ex);
-                }
-            }
-        };
-        outputThread.start();
     }
 
-    public void setThreadCount(int count) {
-        this.threadCount = count;
-    }
-
-    public void setThreadMode(ThreadMode mode) {
-        this.threadMode = mode;
+    public void setUserSearchDistributor(SearchDistributor userSearchDistributor) {
+        this.userSearchDistributor = userSearchDistributor;
     }
 
     public void setBootstrapMin(int depth) {
@@ -271,7 +246,11 @@ public class ChartExec implements Closeable {
         varsOut = extractOutputVariables(absolutePath);
     }
 
-    public void process() throws Exception {
+    public void setDistributorOption(String key, String value) {
+        userSearchDistributorOptions.put(key, value);
+    }
+
+    public List<SearchProblem> prepare() throws Exception {
         initializeData();
         DataGeneratorExecutor executor = new DataGeneratorExecutor(inputFileName);
 
@@ -279,52 +258,27 @@ public class ChartExec implements Closeable {
         List<PossibleState> bfsStates = executor.searchForScenarios(varsOut, initialVariablesMap, initialEventsList,
                 maxEventReps, maxScenarios, lengthOfScenario, bootstrapMin);
 
-        log.info("Found " + bfsStates.size() + " states to start from");
+        List<SearchProblem> dfsProblems = new ArrayList<SearchProblem>();
 
-        // Complete search and send to queue
-        switch (threadMode) {
-            case SINGLE:
-                for (PossibleState state : bfsStates) {
-                    DataGeneratorExecutor exec = new DataGeneratorExecutor(inputFileName);
-                    exec.searchForScenariosDFS(state, queue, varsOut, initialVariablesMap, initialEventsList);
-                }
-                break;
-            case SHARED_MEM:
-            default:
-                ExecutorService threadPool = Executors.newFixedThreadPool(threadCount);
-                for (PossibleState state : bfsStates) {
-                    DataGeneratorExecutor exec = new DataGeneratorExecutor(inputFileName);
-                    Runnable worker = new SearchWorker(state, queue, exec, varsOut, initialVariablesMap,
-                            initialEventsList);
-                    threadPool.execute(worker);
-                }
-
-                threadPool.shutdown();
-
-                // Wait for threadPool shutdown to complete
-                while (!threadPool.isTerminated()) {
-                    try {
-                        //log.debug("process() is waiting for thread pool to terminate");
-                        Thread.sleep(10);
-                    } catch (InterruptedException ex) {
-                    }
-                }
-                break;
+        for (PossibleState state : bfsStates) {
+            dfsProblems.add(new SearchProblem(state, varsOut, initialVariablesMap, initialEventsList));
         }
 
-        // Wait for queue to empty (finish processing any pending output)
-        while (!queue.isEmpty()) {
-            try {
-                //log.debug("process() is waiting for queue to empty");
-                Thread.sleep(10);
-            } catch (InterruptedException ex) {
-            }
-        }
+        return dfsProblems;
     }
 
-    @Override
-    public void close() throws IOException {
-        outputThread.interrupt();
+    public void process() throws Exception {
+        SCXML stateMachine = SCXMLParser.parse((new File(inputFileName)).toURI().toURL(), null);
+
+        List<SearchProblem> dfsProblems = prepare();
+        log.info("Found " + dfsProblems.size() + " states to distribute");
+
+        userSearchDistributor.setOptions(userSearchDistributorOptions);
+        userSearchDistributor.setStateMachineText(FileUtils.readFileToString(new File(inputFileName)));
+        userSearchDistributor.setDataConsumer(userDataOutput);
+        userSearchDistributor.distribute(dfsProblems);
+
+        log.info("DONE.");
     }
 
     private static HashMap<String, String> readVarsOut(SCXMLExecutor executor) {
@@ -335,21 +289,5 @@ public class ChartExec implements Closeable {
         return result;
     }
 
-    private void produceOutput() throws IOException {
-        while (!Thread.interrupted()) {
-            while (!Thread.interrupted() && queue.isEmpty()) {
-                try {
-                    Thread.sleep(10);
-                } catch (InterruptedException ex) {
-                }
-            }
-
-            if (!Thread.interrupted()) {
-                HashMap<String, String> row = queue.poll();
-
-                userDataOutput.consume(row);
-            }
-        }
-    }
 }
 

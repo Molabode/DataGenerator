@@ -28,8 +28,6 @@ public class ChartExecTests {
         TestConsumer consumer = new TestConsumer();
         exec.setUserDataOutput(consumer);
         exec.setBootstrapMin(3);
-        exec.setThreadMode(ChartExec.ThreadMode.SINGLE);
-
         exec.process();
 
         System.out.println(consumer.getData());
@@ -42,9 +40,7 @@ public class ChartExecTests {
         TestConsumer consumer = new TestConsumer();
         exec.setUserDataOutput(consumer);
         exec.setBootstrapMin(3);
-        //exec.setThreadMode(ChartExec.ThreadMode.SHARED_MEM);
-        exec.setThreadCount(4);
-
+        exec.setDistributorOption("threadCount", "4");
         exec.process();
 
         System.out.println(consumer.getData());

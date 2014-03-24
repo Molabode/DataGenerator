@@ -106,9 +106,9 @@ public class DataGeneratorExecutorTests {
         Assert.assertEquals("3", statesAfterBFS.get(8).variablesAssignment.get("var_out_REQUEST_IDENTIFIER"));
     }
 
-    @Test
-    public void testBFSBigMin() throws ModelException, SCXMLExpressionException, SAXException, IOException {
-        List<PossibleState> statesAfterBFS = executor.searchForScenarios(varsOut, initialVarsMap, initialEvents, 5, 10000, 50, 100);
-        Assert.assertEquals(9, statesAfterBFS.size());
-    }
+//    @Test
+//    public void testBFSBigMin() throws ModelException, SCXMLExpressionException, SAXException, IOException {
+//        List<PossibleState> statesAfterBFS = executor.searchForScenarios(varsOut, initialVarsMap, initialEvents, 5, 10000, 50, 100);
+//        Assert.assertEquals(9, statesAfterBFS.size());
+//    }
 }

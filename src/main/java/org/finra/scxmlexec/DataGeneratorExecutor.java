@@ -40,8 +40,11 @@ public class DataGeneratorExecutor extends SCXMLExecutor {
         initExecutor(fileUrl);
     }
 
-    public void initExecutor(URL fileUrl) throws ModelException, SAXException, IOException {
-        SCXML stateMachine = SCXMLParser.parse(fileUrl, null);
+    public DataGeneratorExecutor(SCXML xml) throws ModelException {
+        initExecutor(xml);
+     }
+
+    public void initExecutor(SCXML stateMachine) throws ModelException {
         ELEvaluator elEvaluator = new ELEvaluator();
         ELContext context = new ELContext();
         this.listener = new StateMachineListener();
@@ -52,6 +55,11 @@ public class DataGeneratorExecutor extends SCXMLExecutor {
         this.addListener(stateMachine, listener);
 
         this.reset();
+    }
+
+    public void initExecutor(URL fileUrl) throws ModelException, SAXException, IOException {
+        SCXML stateMachine = SCXMLParser.parse(fileUrl, null);
+        initExecutor(stateMachine);
     }
 
     public StateMachineListener getListener() {
@@ -388,7 +396,7 @@ public class DataGeneratorExecutor extends SCXMLExecutor {
 
             scenariosCount++;
             if (scenariosCount % 10000 == 0) {
-                //log.info("Queue size=" + queue.size());
+                log.info("Queue size=" + queue.size());
             }
 
             if (queue.size() > 1000000) {

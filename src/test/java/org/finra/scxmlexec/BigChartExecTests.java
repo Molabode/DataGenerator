@@ -28,7 +28,6 @@ public class BigChartExecTests {
         TestConsumer consumer = new TestConsumer();
         exec.setUserDataOutput(consumer);
         exec.setBootstrapMin(3);
-        exec.setThreadMode(ChartExec.ThreadMode.SINGLE);
 
         exec.process();
 
@@ -42,9 +41,7 @@ public class BigChartExecTests {
         TestConsumer consumer = new TestConsumer();
         exec.setUserDataOutput(consumer);
         exec.setBootstrapMin(3);
-        //exec.setThreadMode(ChartExec.ThreadMode.SHARED_MEM);
-        exec.setThreadCount(4);
-
+        exec.setDistributorOption("threadCount", "1");
         exec.process();
 
         System.out.println(consumer.getData());

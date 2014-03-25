@@ -15,20 +15,20 @@ import java.util.Map;
 public class ChartExecTests {
 
     private ChartExec exec;
+    private DefaultDistributor distributor;
 
     @Before
     public void setUpChartExec() {
         exec = new ChartExec();
         exec.setInputFileName("src/test/resources/test.xml");
-        exec.setUserDataOutput(new TestConsumer());
+        distributor = new DefaultDistributor();
     }
 
     @Test
     public void testProcess() throws Exception {
         TestConsumer consumer = new TestConsumer();
-        exec.setUserDataOutput(consumer);
-        exec.setBootstrapMin(3);
-        exec.process();
+        distributor.setDataConsumer(consumer);
+        exec.setBootstrapMin(3).process(distributor);
 
         System.out.println(consumer.getData());
 
@@ -38,10 +38,8 @@ public class ChartExecTests {
     @Test
     public void testProcessParallel() throws Exception {
         TestConsumer consumer = new TestConsumer();
-        exec.setUserDataOutput(consumer);
-        exec.setBootstrapMin(3);
-        exec.setDistributorOption("threadCount", "4");
-        exec.process();
+        distributor.setDataConsumer(consumer).setThreadCount(1);
+        exec.setBootstrapMin(3).process(distributor);
 
         System.out.println(consumer.getData());
 

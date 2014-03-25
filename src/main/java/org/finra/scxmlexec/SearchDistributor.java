@@ -25,8 +25,6 @@ import java.util.Map;
  * @author robbinbr
  */
 public interface SearchDistributor {
-    public void setOptions(Map<String, String> options) throws RequiredOptionException;
-    public void setStateMachineText(String stateMachineText);
-    public void setDataConsumer(DataConsumer dataConsumer);
+    public SearchDistributor setStateMachineText(String stateMachineText);
     public void distribute(List<SearchProblem> searchProblemList);
 }

@@ -62,114 +62,87 @@ public class ChartExec {
 
     private int maxScenarios = 10000;
 
-    private OutputStream os = null;
-
-    private SequenceFile.Writer sequenceFileWriter = null;
-
-    private DataConsumer userDataOutput = new DefaultOutput(System.out);
-
     private int bootstrapMin = 0;
-
-    private SearchDistributor userSearchDistributor = new DefaultDistributor();
-
-    private Map<String, String> userSearchDistributorOptions = new HashMap<String, String>();
-
-    private int threadCount = 1;
 
     public ChartExec() {
         isDebugEnabled = false;
     }
 
-    public void setUserSearchDistributor(SearchDistributor userSearchDistributor) {
-        this.userSearchDistributor = userSearchDistributor;
-    }
-
-    public void setBootstrapMin(int depth) {
+    public ChartExec setBootstrapMin(int depth) {
         this.bootstrapMin = depth;
-    }
-
-    public void setUserDataOutput(DataConsumer userDataOutput) {
-        this.userDataOutput = userDataOutput;
+        return this;
     }
 
     public String getOutputVariables() {
         return outputVariables;
     }
 
-    public void setOutputVariables(String outputVariables) {
+    public ChartExec setOutputVariables(String outputVariables) {
         this.outputVariables = outputVariables;
+        return this;
     }
 
     public String getInitialEvents() {
         return initialEvents;
     }
 
-    public void setInitialEvents(String initialEvents) {
+    public ChartExec setInitialEvents(String initialEvents) {
         this.initialEvents = initialEvents;
+        return this;
     }
 
     public String getInitialVariables() {
         return initialVariables;
     }
 
-    public void setInitialVariables(String initialVariables) {
+    public ChartExec setInitialVariables(String initialVariables) {
         this.initialVariables = initialVariables;
-    }
-
-    public OutputStream getOs() {
-        return os;
-    }
-
-    public void setOs(OutputStream os) {
-        this.os = os;
+        return this;
     }
 
     public String getInputFileName() {
         return inputFileName;
     }
 
-    public SequenceFile.Writer getSequenceFileWriter() {
-        return sequenceFileWriter;
-    }
-
-    public void setSequenceFileWriter(SequenceFile.Writer sequenceFileWriter) {
-        this.sequenceFileWriter = sequenceFileWriter;
-    }
-
-    public void setInputFileName(String inputFileName) {
+    public ChartExec setInputFileName(String inputFileName) {
         this.inputFileName = inputFileName;
+        return this;
     }
 
     public boolean isGenerateNegativeScenarios() {
         return generateNegativeScenarios;
     }
 
-    public void setGenerateNegativeScenarios(boolean generateNegativeScenarios) {
+    public ChartExec setGenerateNegativeScenarios(boolean generateNegativeScenarios) {
         this.generateNegativeScenarios = generateNegativeScenarios;
+        return this;
     }
 
     public int getLengthOfScenario() {
         return lengthOfScenario;
     }
 
-    public void setLengthOfScenario(int lengthOfScenario) {
+    public ChartExec setLengthOfScenario(int lengthOfScenario){
         this.lengthOfScenario = lengthOfScenario;
+        return this;
     }
 
     public int getMaxEventReps() {
         return maxEventReps;
     }
 
-    public void setMaxEventReps(int maxEventReps) {
+    public ChartExec setMaxEventReps(int maxEventReps) {
         this.maxEventReps = maxEventReps;
+        return this;
     }
 
     public int getMaxScenarios() {
         return maxScenarios;
     }
 
-    public void setMaxScenarios(int maxScenarios) {
+    public ChartExec setMaxScenarios(int maxScenarios) {
         this.maxScenarios = maxScenarios;
+        return this;
     }
 
     private boolean doSanityChecks() throws IOException {
@@ -237,21 +210,12 @@ public class ChartExec {
         return outputVars;
     }
 
-
-    private void initializeData() throws Exception {
+    public List<SearchProblem> prepare() throws Exception {
         doSanityChecks();
         // Load the state machine
         String absolutePath = (new File(inputFileName)).getAbsolutePath();
         log.info("Processing file:" + absolutePath);
         varsOut = extractOutputVariables(absolutePath);
-    }
-
-    public void setDistributorOption(String key, String value) {
-        userSearchDistributorOptions.put(key, value);
-    }
-
-    public List<SearchProblem> prepare() throws Exception {
-        initializeData();
         DataGeneratorExecutor executor = new DataGeneratorExecutor(inputFileName);
 
         // Get BFS-generated states for bootstrapping parallel search
@@ -267,27 +231,14 @@ public class ChartExec {
         return dfsProblems;
     }
 
-    public void process() throws Exception {
-        SCXML stateMachine = SCXMLParser.parse((new File(inputFileName)).toURI().toURL(), null);
-
+    public void process(SearchDistributor distributor) throws Exception {
         List<SearchProblem> dfsProblems = prepare();
         log.info("Found " + dfsProblems.size() + " states to distribute");
 
-        userSearchDistributor.setOptions(userSearchDistributorOptions);
-        userSearchDistributor.setStateMachineText(FileUtils.readFileToString(new File(inputFileName)));
-        userSearchDistributor.setDataConsumer(userDataOutput);
-        userSearchDistributor.distribute(dfsProblems);
+        distributor.setStateMachineText(FileUtils.readFileToString(new File(inputFileName)));
+        distributor.distribute(dfsProblems);
 
         log.info("DONE.");
     }
-
-    private static HashMap<String, String> readVarsOut(SCXMLExecutor executor) {
-        HashMap<String, String> result = new HashMap<String, String>();
-        for (String varName : varsOut) {
-            result.put(varName, (String) executor.getRootContext().get(varName));
-        }
-        return result;
-    }
-
 }
 

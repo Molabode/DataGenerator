@@ -15,21 +15,20 @@ import java.util.Map;
 public class BigChartExecTests {
 
     private ChartExec exec;
+    private DefaultDistributor distributor;
 
     @Before
     public void setUpChartExec() {
         exec = new ChartExec();
         exec.setInputFileName("src/test/resources/big.xml");
-        exec.setUserDataOutput(new TestConsumer());
+        distributor = new DefaultDistributor();
     }
 
     @Test
     public void testProcess() throws Exception {
         TestConsumer consumer = new TestConsumer();
-        exec.setUserDataOutput(consumer);
-        exec.setBootstrapMin(3);
-
-        exec.process();
+        distributor.setDataConsumer(consumer);
+        exec.setBootstrapMin(3).process(distributor);
 
         System.out.println(consumer.getData());
 
@@ -39,10 +38,8 @@ public class BigChartExecTests {
     @Test
     public void testProcessParallel() throws Exception {
         TestConsumer consumer = new TestConsumer();
-        exec.setUserDataOutput(consumer);
-        exec.setBootstrapMin(3);
-        exec.setDistributorOption("threadCount", "1");
-        exec.process();
+        distributor.setThreadCount(3).setDataConsumer(consumer);
+        exec.setBootstrapMin(3).process(distributor);
 
         System.out.println(consumer.getData());
 

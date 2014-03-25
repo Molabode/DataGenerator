@@ -12,7 +12,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
@@ -31,19 +30,21 @@ public class DefaultDistributor implements SearchDistributor {
     private DataConsumer userDataOutput = new DefaultOutput(System.out);
     private String stateMachineText;
 
-    @Override
-    public void setOptions(Map<String, String> options) throws RequiredOptionException {
-        threadCount = options.get("threadCount") == null ? 1 : Integer.parseInt(options.get("threadCount"));
-    }
 
-    @Override
-    public void setStateMachineText(String stateMachine) {
-        this.stateMachineText = stateMachine;
-    }
-
-    @Override
-    public void setDataConsumer(DataConsumer dataConsumer) {
+    public DefaultDistributor setDataConsumer(DataConsumer dataConsumer) {
         this.userDataOutput = dataConsumer;
+        return this;
+    }
+
+    public DefaultDistributor setThreadCount(int threadCount) {
+        this.threadCount = threadCount;
+        return this;
+    }
+
+    @Override
+    public SearchDistributor setStateMachineText(String stateMachine) {
+        this.stateMachineText = stateMachine;
+        return this;
     }
 
     @Override

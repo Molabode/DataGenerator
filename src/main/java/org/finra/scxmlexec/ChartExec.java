@@ -1,16 +1,10 @@
 package org.finra.scxmlexec;
 
-import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.scxml.SCXMLExecutor;
-import org.apache.commons.scxml.io.SCXMLParser;
-import org.apache.commons.scxml.model.SCXML;
-import org.apache.hadoop.io.SequenceFile;
 import org.apache.log4j.Logger;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.OutputStream;
+import java.io.*;
 import java.util.*;
 
 public class ChartExec {
@@ -23,11 +17,6 @@ public class ChartExec {
      * A comma separated list of variables to be passed to the OutputFormatter
      */
     private String outputVariables;
-
-    /**
-     * The input SCXML chart file
-     */
-    private String inputFileName = null;
 
     /**
      * The set of initial variables that the user wants to set
@@ -63,6 +52,7 @@ public class ChartExec {
     private int maxScenarios = 10000;
 
     private int bootstrapMin = 0;
+    private InputStream inputFileStream;
 
     public ChartExec() {
         isDebugEnabled = false;
@@ -100,12 +90,19 @@ public class ChartExec {
         return this;
     }
 
-    public String getInputFileName() {
-        return inputFileName;
+    @Deprecated
+    public ChartExec setInputFileName(String inputFileName) {
+        new File(inputFileName);
+        try {
+            this.inputFileStream = new FileInputStream(new File(inputFileName));
+        } catch (FileNotFoundException e) {
+            log.error("Error creating InputStream for file " + inputFileName, e);
+        }
+        return this;
     }
 
-    public ChartExec setInputFileName(String inputFileName) {
-        this.inputFileName = inputFileName;
+    public ChartExec setInputFileStream(InputStream inputFileStream) {
+        this.inputFileStream = inputFileStream;
         return this;
     }
 
@@ -146,16 +143,9 @@ public class ChartExec {
     }
 
     private boolean doSanityChecks() throws IOException {
-        /*        if (outputVariables == null) {
-         throw new IOException("Cannot continuw with outputVariables=null");
-         }*/
 
-        if (inputFileName == null) {
+        if (inputFileStream == null) {
             throw new IOException("Error:, input file cannot be null");
-        }
-
-        if (!(new File(inputFileName)).exists()) {
-            throw new IOException("Error:, input file does not exist");
         }
 
         // Parse the initial events
@@ -183,11 +173,13 @@ public class ChartExec {
         return true;
     }
 
-    private HashSet<String> extractOutputVariables(String filePathName) throws IOException {
-        log.info("Extracting variables from file: " + filePathName);
-        List<String> linesRead = FileUtils.readLines(new File(filePathName));
+    private HashSet<String> extractOutputVariables(String stateMachineText) throws IOException {
+        InputStream is = new ByteArrayInputStream(stateMachineText.getBytes());
+        BufferedReader bReader = new BufferedReader(new InputStreamReader(is));
+
         HashSet<String> outputVars = new HashSet<String>();
-        for (String line : linesRead) {
+        String line = bReader.readLine();
+        while (line != null) {
             if (line.contains("var_out")) {
                 int startIndex = line.indexOf("var_out");
                 int lastIndex = startIndex;
@@ -205,19 +197,18 @@ public class ChartExec {
                 log.info("Found variable: " + varName);
                 outputVars.add(varName);
             }
+            line = bReader.readLine();
         }
 
         return outputVars;
     }
 
-    public List<SearchProblem> prepare() throws Exception {
+    public List<SearchProblem> prepare(String stateMachineText) throws Exception {
         doSanityChecks();
-        // Load the state machine
-        String absolutePath = (new File(inputFileName)).getAbsolutePath();
-        log.info("Processing file:" + absolutePath);
-        varsOut = extractOutputVariables(absolutePath);
-        DataGeneratorExecutor executor = new DataGeneratorExecutor(inputFileName);
 
+        DataGeneratorExecutor executor = new DataGeneratorExecutor(stateMachineText);
+
+        varsOut = extractOutputVariables(stateMachineText);
         // Get BFS-generated states for bootstrapping parallel search
         List<PossibleState> bfsStates = executor.searchForScenarios(varsOut, initialVariablesMap, initialEventsList,
                 maxEventReps, maxScenarios, lengthOfScenario, bootstrapMin);
@@ -232,12 +223,12 @@ public class ChartExec {
     }
 
     public void process(SearchDistributor distributor) throws Exception {
-        List<SearchProblem> dfsProblems = prepare();
+        String machineText = IOUtils.toString(inputFileStream, "UTF-8");
+        List<SearchProblem> dfsProblems = prepare(machineText);
+
         log.info("Found " + dfsProblems.size() + " states to distribute");
-
-        distributor.setStateMachineText(FileUtils.readFileToString(new File(inputFileName)));
+        distributor.setStateMachineText(machineText);
         distributor.distribute(dfsProblems);
-
         log.info("DONE.");
     }
 }

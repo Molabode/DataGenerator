@@ -11,10 +11,12 @@ import org.apache.commons.scxml.model.SCXML;
 import org.apache.commons.scxml.model.Transition;
 import org.apache.commons.scxml.model.TransitionTarget;
 import org.apache.log4j.Logger;
+import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
-import java.io.File;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.util.*;
 
@@ -31,18 +33,15 @@ public class DataGeneratorExecutor extends SCXMLExecutor {
         super();
     }
 
-    public DataGeneratorExecutor(String filePath) throws IOException, ModelException, SAXException {
-        URL fileUrl = new File(filePath).toURI().toURL();
-        initExecutor(fileUrl);
-    }
-
-    public DataGeneratorExecutor(URL fileUrl) throws IOException, ModelException, SAXException {
-        initExecutor(fileUrl);
+    public DataGeneratorExecutor(String stateMachineText) throws ModelException, SAXException, IOException {
+        InputStream is = new ByteArrayInputStream(stateMachineText.getBytes());
+        SCXML stateMachine = SCXMLParser.parse(new InputSource(is), null);
+        initExecutor(stateMachine);
     }
 
     public DataGeneratorExecutor(SCXML xml) throws ModelException {
         initExecutor(xml);
-     }
+    }
 
     public void initExecutor(SCXML stateMachine) throws ModelException {
         ELEvaluator elEvaluator = new ELEvaluator();

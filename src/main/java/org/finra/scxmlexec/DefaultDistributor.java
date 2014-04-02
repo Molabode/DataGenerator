@@ -1,15 +1,10 @@
 package org.finra.scxmlexec;
 
-import org.apache.commons.scxml.io.SCXMLParser;
 import org.apache.commons.scxml.model.ModelException;
-import org.apache.commons.scxml.model.SCXML;
 import org.apache.log4j.Logger;
-import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Queue;
@@ -68,9 +63,7 @@ public class DefaultDistributor implements SearchDistributor {
         for (SearchProblem problem : searchProblemList) {
             Runnable worker = null;
             try {
-                InputStream is = new ByteArrayInputStream(stateMachineText.getBytes());
-                SCXML stateMachine = SCXMLParser.parse(new InputSource(is), null);
-                worker = new SearchWorker(problem, stateMachine, queue);
+                worker = new SearchWorker(problem, stateMachineText, queue);
             } catch (ModelException e) {
                 log.error("Error while initializing SearchWorker threads", e);
             } catch (SAXException e) {

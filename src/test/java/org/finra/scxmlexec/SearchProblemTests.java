@@ -1,8 +1,12 @@
 package org.finra.scxmlexec;
 
+import org.apache.commons.io.IOUtils;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
 import java.util.List;
 
 /**
@@ -13,9 +17,10 @@ public class SearchProblemTests {
     @Test
     public void testToJsonAndFromJson() throws Exception {
         ChartExec chartExec = new ChartExec();
-        chartExec.setInputFileName("src/test/resources/test.xml");
+        InputStream inputFileStream = new FileInputStream(new File("src/test/resources/test.xml"));
+        String machineText = IOUtils.toString(inputFileStream, "UTF-8");
         chartExec.setBootstrapMin(3);
-        List<SearchProblem> problems = chartExec.prepare();
+        List<SearchProblem> problems = chartExec.prepare(machineText);
 
         Assert.assertEquals(3, problems.size());
 

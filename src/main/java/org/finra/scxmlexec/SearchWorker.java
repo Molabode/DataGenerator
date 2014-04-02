@@ -1,9 +1,10 @@
 package org.finra.scxmlexec;
 
 import org.apache.commons.scxml.model.ModelException;
-import org.apache.commons.scxml.model.SCXML;
 import org.apache.log4j.Logger;
+import org.xml.sax.SAXException;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
@@ -26,9 +27,10 @@ public class SearchWorker implements Runnable {
     private List<String> initialEventsList;
 
 
-    public SearchWorker(SearchProblem problem, SCXML stateMachine, Queue queue) throws ModelException {
+    public SearchWorker(SearchProblem problem, String stateMachineText, Queue queue) throws ModelException,
+            IOException, SAXException {
         this.queue = queue;
-        this.executor = new DataGeneratorExecutor(stateMachine);
+        this.executor = new DataGeneratorExecutor(stateMachineText);
         this.initialState = problem.getInitialState();
         this.varsOut = problem.getVarsOut();
         this.initialVariablesMap = problem.getInitialVariablesMap();

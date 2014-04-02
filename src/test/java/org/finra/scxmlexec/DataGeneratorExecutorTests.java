@@ -1,5 +1,6 @@
 package org.finra.scxmlexec;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.scxml.SCXMLExpressionException;
 import org.apache.commons.scxml.model.ModelException;
 import org.junit.Assert;
@@ -7,8 +8,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.xml.sax.SAXException;
 
+import java.io.File;
 import java.io.IOException;
-import java.net.URL;
 import java.util.*;
 
 /**
@@ -23,8 +24,7 @@ public class DataGeneratorExecutorTests {
 
     @Before
     public void setUpExecutor() throws ModelException, SAXException, IOException {
-        URL testXmlURL = this.getClass().getResource("/test.xml");
-        executor = new DataGeneratorExecutor(testXmlURL);
+        executor = new DataGeneratorExecutor(FileUtils.readFileToString(new File("src/test/resources/test.xml")));
 
         varsOut = new HashSet<String>();
         varsOut.addAll(Arrays.asList(new String[]{"var_out_RECORD_TYPE", "var_out_REQUEST_IDENTIFIER",
@@ -75,7 +75,8 @@ public class DataGeneratorExecutorTests {
 
     @Test
     public void testBFSOneLevel() throws ModelException, SCXMLExpressionException, SAXException, IOException {
-        List<PossibleState> statesAfterBFS = executor.searchForScenarios(varsOut, initialVarsMap, initialEvents, 5, 10000, 50, 3);
+        List<PossibleState> statesAfterBFS = executor.searchForScenarios(varsOut, initialVarsMap, initialEvents, 5,
+                10000, 50, 3);
         Assert.assertEquals(3, statesAfterBFS.size());
         Assert.assertEquals("a", statesAfterBFS.get(0).variablesAssignment.get("var_out_RECORD_TYPE"));
         Assert.assertEquals("b", statesAfterBFS.get(1).variablesAssignment.get("var_out_RECORD_TYPE"));
@@ -84,7 +85,8 @@ public class DataGeneratorExecutorTests {
 
     @Test
     public void testBFSTwoLevels() throws ModelException, SCXMLExpressionException, SAXException, IOException {
-        List<PossibleState> statesAfterBFS = executor.searchForScenarios(varsOut, initialVarsMap, initialEvents, 5, 10000, 50, 9);
+        List<PossibleState> statesAfterBFS = executor.searchForScenarios(varsOut, initialVarsMap, initialEvents, 5,
+                10000, 50, 9);
         Assert.assertEquals(9, statesAfterBFS.size());
         Assert.assertEquals("a", statesAfterBFS.get(0).variablesAssignment.get("var_out_RECORD_TYPE"));
         Assert.assertEquals("1", statesAfterBFS.get(0).variablesAssignment.get("var_out_REQUEST_IDENTIFIER"));
@@ -108,7 +110,8 @@ public class DataGeneratorExecutorTests {
 
 //    @Test
 //    public void testBFSBigMin() throws ModelException, SCXMLExpressionException, SAXException, IOException {
-//        List<PossibleState> statesAfterBFS = executor.searchForScenarios(varsOut, initialVarsMap, initialEvents, 5, 10000, 50, 100);
+//        List<PossibleState> statesAfterBFS = executor.searchForScenarios(varsOut, initialVarsMap, initialEvents, 5,
+// 10000, 50, 100);
 //        Assert.assertEquals(9, statesAfterBFS.size());
 //    }
 }

@@ -54,7 +54,7 @@ import java.util.Set;
 
 /**
  * Engine implementation for generating data with SCXML state machine models.
- * <p/>
+ * <p></p>
  * Marshall Peters
  * Date: 8/25/14
  */

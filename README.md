@@ -48,7 +48,7 @@ Overview
 
 Data Generator generates pattern using two pieces of user provided information:
 
-1. An SCXML state chart representing interactions between different states, and setting values to output variables
+1. An [SCXML](http://commons.apache.org/proper/commons-scxml/) state chart representing interactions between different states, and setting values to output variables
 2. A user [Transformer](http://finraos.github.io/DataGenerator/apis/v2.0/org/finra/datagenerator/consumer/DataTransformer.html) that formats the variables and stores them.
 
 The user can optionally provide their own [distributor](http://finraos.github.io/DataGenerator/apis/v2.0/org/finra/datagenerator/distributor/SearchDistributor.html) that distributes the search of bigger problems on systems like hadoop. By default, DataGenerator will use a multithreaded distributor.
@@ -59,7 +59,7 @@ Quick start
 
 For the full compilable code please see the [default example](https://github.com/FINRAOS/DataGenerator/blob/master/dg-example-default/)
 
-First step, define an SCXML model:
+First step, define an [SCXML](http://commons.apache.org/proper/commons-scxml/) model:
 ```xml
 <scxml xmlns="http://www.w3.org/2005/07/scxml"
        xmlns:cs="http://commons.apache.org/scxml"
@@ -152,6 +152,6 @@ The last step will be writing a main function that ties both pieces together. Co
         engine.process(defaultDistributor);
     }
 ```
-The first few lines will open an input stream on the SCXML file and pass the stream to the engine. Calling setBootStrapMin will attempt to split the graph generated from the state chart to at least the given number of splits. Here we passed 1 but in case you will execute the same code over hadoop or use a multithreaded version, you will need to increase that number to be at least the number of threads or mappers you wish to run. The rest of the code will set our transformer to the engine and create a writer based on the DefaultWriter. The function of the writer is to write the output to the user's desired destination.
+The first few lines will open an input stream on the [SCXML](http://commons.apache.org/proper/commons-scxml/) file and pass the stream to the engine. Calling setBootStrapMin will attempt to split the graph generated from the state chart to at least the given number of splits. Here we passed 1 but in case you will execute the same code over hadoop or use a multithreaded version, you will need to increase that number to be at least the number of threads or mappers you wish to run. The rest of the code will set our transformer to the engine and create a writer based on the DefaultWriter. The function of the writer is to write the output to the user's desired destination.
 
 The final piece sets the number of threads and called engine.process.

@@ -28,7 +28,7 @@ To handle the missing account number value make a transformer that when given a 
         }
 
         public void transform(DataPipe dataPipe) {
-            dataPipe.getDataMap.put("accountNumber", generateAccountNumber(uniqueAccountSeed));
+            dataPipe.getDataMap().put("accountNumber", generateAccountNumber(uniqueAccountSeed));
         }
 
         public String generateAccountNumber(int seed) {
@@ -83,7 +83,7 @@ To have one hundred accounts, one can vary the value of uniqueAccountSeed from 0
                 return 0;
 
             accounts.setUniqueAccountSeed(currentAccount);
-            currentAccount++
+            currentAccount++;
             return super.consume(row);
         }
     }

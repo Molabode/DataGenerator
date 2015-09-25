@@ -65,7 +65,7 @@ public class RangeExtension implements CustomTagExtension<RangeExtension.RangeTa
         if (action.getStep() != null) {
             step = new BigDecimal(action.getStep());
         } else {
-            step = new BigDecimal(1);
+            step = BigDecimal.ONE;
         }
 
         List<BigDecimal> rangeValues = new ArrayList<>();
@@ -86,7 +86,6 @@ public class RangeExtension implements CustomTagExtension<RangeExtension.RangeTa
         for (Map<String, String> p : possibleStateList) {
             for (BigDecimal value : rangeValues) {
                 HashMap<String, String> n = new HashMap<>(p);
-                value = value.stripTrailingZeros();
                 n.put(variable, value.toString());
                 productTemp.add(n);
             }
